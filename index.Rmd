@@ -1,0 +1,1975 @@
+---
+title: "Análisis de criptomonedas, evolución y actualidad."
+author: "Alejandro Calderero Pierna(acalpier@alumni.uv.es)  \n\n Alejandro Pérez Sanchiz(pesana@alumni.uv.es)  \n \n Mario de Benito Mercado(debemer@alumni.uv.es). \n\n Universitat de València"
+date: "Diciembre de 2021 (actualizado el `r format(Sys.time(), '%d-%m-%Y')`)"
+output:
+  html_document:
+    css: "./assets/my_css_file.css"
+    theme: paper
+    highlight: textmate 
+    toc: true
+    toc_depth: 3 
+    toc_float: 
+      collapsed: true
+      smooth_scroll: true
+    self_contained: true
+    number_sections: false
+    df_print: kable
+    code_download: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r packages-setup, include = FALSE}
+library(tidyverse)
+library(klippy)  #- remotes::install_github("rlesur/klippy")
+library(knitr)
+```
+
+```{r chunk-setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE, 
+                      #results = "hold",
+                      cache = FALSE, cache.path = "/caches/", comment = "#>",
+                      #fig.width = 7, #fig.height= 7,   
+                      #out.width = 7, out.height = 7,
+                      collapse = TRUE,  fig.show = "hold",
+                      fig.asp = 0.628, out.width = "75%", fig.align = "center")
+knitr::opts_chunk$set(dev = "png", dev.args = list(type = "cairo-png"))
+```
+
+
+```{r options-setup, include = FALSE}
+options(scipen = 999) #- para quitar la notación científica
+options("yaml.eval.expr" = TRUE) 
+```
+
+
+```{r klippy, echo = FALSE}
+klippy::klippy(position = c("top", "right")) #- remotes::install_github("rlesur/klippy")
+```
+
+```{r, include = FALSE}
+library(rio)
+library(ggplot2)
+library(tidyverse)
+library(TTR)
+library(quantmod)
+library(tidyr)
+library(readr)
+library(prophet)
+library(PerformanceAnalytics)
+library(readr)
+library(tidyverse)
+library(lubridate)
+library(crypto2)
+library(DT)
+library(gt)
+library(plotly)
+library(ggimage)
+library(gganimate)
+library(robservable)
+library(gtExtras)
+library(tmap)
+library(rnaturalearth)
+library(readxl)
+library(rio)
+library(tidyr)
+library(readr)
+library(tseries)
+library(forecast)
+library(tidyquant)
+    options("getSymbols.warning4.0"=FALSE)
+    options("getSymbols.yahoo.warning"=FALSE)
+library(quantmod)
+library(TTR)
+library(RcppRoll)
+library(prophet)
+library(PerformanceAnalytics)
+library(tweetrmd)
+
+```
+<hr class="linea-black">
+
+<!-- El párrafo de abajo has de dejarlo casi igual, solo HAS de SUSTITUIR "perezp44" por tu usuario de Github-->
+Trabajo elaborado para la asignatura "Programación y manejo de datos en la era del Big Data" de la Universitat de València durante el curso 2021-2022. El repo del trabajo está [aquí](https://github.com/alejandrocp00/trabajo_BigData){target="_blank"}. 
+
+<!-- El párrafo de abajo has de dejarlo exactamente igual, NO HAS DE CAMBIAR NADA-->
+
+La página web de la asignatura y los trabajos de mis compañeros pueden verse [aquí](https://perezp44.github.io/intro-ds-21-22-web/07-trabajos.html){target="_blank"}.
+
+
+<hr class="linea-red">
+
+# 1. Introducción
+
+
+## 1.1. LAS CRIPTOMONEDAS
+Las criptomonedas son divisas digitales Peer-to-peer (P2P).
+¿Qué es el P2P? Las plataformas de pagos online que conocemos hoy en día pertenecen a organizaciones. Ellos retienen tu dinero y debes solicitar alguna transacción o transferencia a tu nombre si deseas gastar en algo. Con las criptomonedas, no existe ninguna organización. Entonces, tanto tú como tus amigos y familiares pueden ser su propio banco gracias a que tu ordenador se conecta con los ordenadores de otras personas, lo que permite una comunicación directa sin intermediarios. Nadie puede evitar que uses tus criptomonedas. En cambio, los servicios de pagos centralizados pueden congelar tus cuentas o evitar que realices transacciones.
+
+<center><img src="assets/intro.png" width="350px" /></center>
+
+<br>
+
+## 1.2. ¿ACTIVO REFUGIO?
+
+No obstante, las criptomonedas también sirven como activo refugio. ¿Qué es un activo refugio? El valor de la riqueza suele bajar o desaparecer. Por ejemplo, la comida caduca, los objetos tienen amortización, y el dinero tiende a devaluarse con la inflación. Pero las personas queremos _almacenar_ la riqueza. Para esto están los activos refugio. Los ejemplos típicos son el oro, los cuadros o las casas. ¿Pero por qué Bitcoin es un buen activo refugio?
+
+* **Escasez extrema: nunca habrá más de 21 millones de bitcoin (no ocurre con otro activo)**
+* **No se puede robar o confiscar por el estado (el oro se puede robar y se ha confiscado por el estado)**
+* **Fácil de enviar (una casa no se puede mover)**
+* **Fácil de liquidar (se puede vender en cualquier momento)**
+
+<br>
+
+## 2. Datos que hemos utilizado. {.tabset}
+
+### <FONT COLOR="d3a46a">**DATOS**</FONT>
+
+Los datos usados en este trabajo han sido obtenidos de diferentes fuentes y posteriormente los hemos ido modificando para usarlos.
+
+En primer lugar, tomamos los datos principales acerca del precio de las criptomonedas desde [kaggle](https://www.kaggle.com/sudalairajkumar/cryptocurrencypricehistory), la fuente de estos datos es [Blockchain.com](https://www.blockchain.com/explorer), una fuente de referencia en este mundo.
+
+Por otra parte, otros datos de criptomonedas menos conocidas (altcoins) los tomamos de dos paquetes: [Crypto2](https://github.com/sstoeckl/crypto2) y [quantmond](https://github.com/joshuaulrich/quantmod), de ambos, tuvimos que "limpiar" los datos (como mostramos en la pestaña "tidy").
+
+Además, para la obtención de datos como los retornos, usamos paquetes especiales para el análisis técnico como [PerformanceAnalytics](https://github.com/braverock/PerformanceAnalytics). 
+
+De igual forma, cada gráfico, análisis, tabla... ha necesitado un tratado especial que veremos en cada apartado concreto.
+
+
+### <FONT COLOR="d3a46a">**TIDY**</FONT>
+
+```{r, eval=FALSE}
+
+#Limpieza para estudio actual de criptomonedas
+
+coins <- crypto_list(only_active=TRUE)
+coin_hist <- crypto_history(coins, limit=500, start_date="20211130", end_date="20211130") %>%
+  filter(timestamp=="2021-11-30 23:59:59") 
+
+
+coin_info<- crypto_info(coins,limit=500)
+
+
+a<-coin_info %>% select(slug,urls, logo, category) %>% 
+  unnest(urls) %>% filter(name %in% c("reddit","twitter")) %>%
+  select(slug,url,logo)
+c<-full_join(a,coin_hist, by="slug") %>% mutate(close= round(close,2))
+
+c$url <- paste0("<a href='",c$url,"'>",c$url,"</a>")
+c$logo<- paste0("'<img src=", c$logo, "></img>'")
+
+data_total2<-read.csv("./datos/data_total2.csv")
+```
+```{r}
+#QUANTMOD
+
+portfolio = c("ETH-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2018-01-01")
+
+datos_tecnico_eth <- `ETH-USD`
+
+portfolio = c("BTC-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2018-01-01")
+
+datos_analisis_btc <- `BTC-USD`
+
+
+data_total <- read_csv("datos/data_total.csv")
+
+data_eth <- data_total %>% filter(Name == "Ethereum")
+
+data_eth <- data_eth %>% select(Date, Close)
+
+data_eth <- data_eth %>% rename(ds = Date, y = Close)
+
+modelo1 <- prophet(data_eth)
+horizonte1 <- make_future_dataframe(modelo1, periods = 365)
+
+forecast1 <- predict(modelo1, horizonte1)
+
+
+```
+
+<br>
+
+## 2.1. Datos finales. {.tabset}
+
+### <FONT COLOR="d3a46a">**EGG**</FONT>
+
+Los datos finales con los que trabajamos los podemos ver en la siguiente tabla. 
+
+
+```{r, eval = TRUE, echo=FALSE}
+datas<-data_total %>% select(Name, Symbol, Date, Close, Volume, Marketcap)
+datatable(datas,escape=FALSE, class="cell-border stripe", extensions = c("Buttons","FixedColumns"),
+          options = list(dom = 'Blfrtip',
+                         fixedColumns=list(leftColumns=2),
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                         pageLength = 6, autoWidth = TRUE,
+                         columnDefs = list(list(width = '280px', targets = c(1, 5)))))
+```
+
+Más adelante mostraremos otra tabla con más información acerca de las altcoins, pero antes debemos explicar algunos conceptos
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval = FALSE, include=TRUE}
+datas<-data_total %>% select(Name, Symbol, Date, Close, Volume, Marketcap)
+datatable(datas,escape=FALSE, class="cell-border stripe", extensions = c("Buttons","FixedColumns"),
+          options = list(dom = 'Blfrtip',
+                         fixedColumns=list(leftColumns=2),
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                         pageLength = 6, autoWidth = TRUE,
+                         columnDefs = list(list(width = '280px', targets = c(1, 5)))))
+```
+
+<br>
+
+# 3. No sólo existe Bitcoin...
+
+Durante los últimos años, la criptomoneda que más hemos escuchado es Bitcoin, sin embargo, no es la única que existe, aunque sí la más valiosa.
+Existen muchas criptomonedas que han ido surgiendo a lo largo de los años. Nuestro análisis posterior se centrará en Bitcoin y en Ethereum, las dos más importantes a día de hoy, o, por lo menos de las que más se habla; pero antes, debemos detenernos en ver la gran cantidad de criptomonedas que hay, su valor, y cómo algunas "superan" a Bitcoin en algunos aspectos.
+
+<br>
+
+## 3.1 El surgimiento de las "altcoins". {.tabset}
+
+### <FONT COLOR="d3a46a">**Altcoins**</FONT>
+
+Las criptomonedas alternativas (o altcoins) es como se suele llamar a aquellas criptomonedas que no se encuentran entre las 10 principales en cuanto a capitalización, y como podemos ver, en los últimos años han surgido muchas:
+
+```{r, echo=FALSE}
+knitr::include_graphics(here::here("Capturas","plot2.png"))
+```
+
+Las primeras criptomonedas surgieron en el año 2013, por eso, gran parte de nuestros análisis empezarán en torno a 2013/2014.
+
+Vemos que han surgido muchas criptomonedas en los últimos años, y a partir de este gráfico, nos empezamos a cuestionar la siguiente hipótesis: ¿La aparición de nuevas criptomonedas va "por modas"?
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval = FALSE, include=TRUE}
+coins <- crypto_list(only_active=TRUE)
+names(coins)
+a<-coins %>% 
+  slice_min(n=50, rank) %>% 
+  select(slug,rank, first_historical_data) %>%
+  mutate( ano= format(first_historical_data, "%Y")) %>%
+  mutate(ano= as.numeric(ano))
+
+str(a)
+
+plot<- ggplot(a, aes(x=slug, y= first_historical_data)) + 
+  geom_segment( aes(x=slug, xend=slug, y=15000, yend=first_historical_data), color="grey") +
+  geom_point( color="orange", size=4, alpha=0.7) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  ) 
+
+ggplotly(plot)
+```
+
+<br>
+
+## 3.2 ¿Altcoins = Moda? {.tabset}
+
+### <FONT COLOR="d3a46a">**¿Moda?**</FONT>
+
+En este gráfico nos planteamos hasta qué punto la aparición de nuevas altcoins está relacionado con el hecho de que el Bitcoin haya subido de precio en las últimas semanas;
+
+```{r, echo=FALSE}
+coin_Bitcoin <- read_csv("datos/coin_Bitcoin2.csv")
+coins <- crypto_list(only_active=TRUE)
+a<-coins %>% 
+  slice_min(n=800, rank) %>% 
+  select(slug,rank, first_historical_data) %>% 
+  rename("Data" = "first_historical_data") %>%
+  mutate(Date=as.numeric(Data)) %>% mutate(ok=1) %>%
+  group_by(Date= floor_date(Data, "month")) %>%
+  summarize(nuevas= sum(ok))
+
+btc<-coin_Bitcoin %>% select(Name, Date, Close) %>%
+  mutate(Date=as.numeric(Date)) 
+
+
+p<- ggplot(btc, aes(x= Date, y= Close)) + 
+  geom_col(fill="black") + geom_hline(yintercept = 70000, color="black") 
+
+p<-p + geom_point(data = a, 
+              aes(x = Date, y = 70000, size = nuevas),
+              color = "red",
+              alpha = 0.5) 
+p<- p + theme(plot.subtitle = element_text(family = "Times",
+    size = 10), panel.grid.major = element_line(colour = "#fbf7f0"),
+    panel.grid.minor = element_line(colour = "#fbf7f0"),
+    axis.title = element_text(family = "Times"),
+    axis.text = element_text(family = "Times"),
+    axis.text.x = element_text(size = 20,
+        colour = "#fbf7f0"), plot.title = element_text(family = "Times",
+        size = 17, face = "bold", vjust = 5),
+    panel.background = element_rect(fill = "#fbf7f0"),
+    plot.background = element_rect(fill = "#fbf7f0")) +labs(title = "¿Altcoins = moda?", x = "Tiempo",
+    y = "Precio BTC ($)", size = "Nuevas criptomonedas",
+    subtitle = "¿Existe correlación entre la aparición de nuevas criptomonedas (altcoins) y el precio del Bitcoin?")
+
+ggplotly(p)
+```
+
+
+Se puede observar, que en los períodos en los que el Bitcoin está en máximos (o está subiendo hacia uno) aparecen más altcoins que en el resto de períodos, por lo que, hasta cierto punto, la aparición de nuevas criptomonedas sí está relacionada.
+
+Esto no es un punto a favor de las altcoins y vemos cómo algunas se centran fundamentalmente en la especulación.
+De igual manera, otras criptomonedas menos conocidas forman parte de proyectos que el público ha considerado interesantes y han tenido un mayor apoyo; de hecho, han llegado a superar a Bitcoin en cuanto a volumen o marketcap... 
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+
+coin_Bitcoin <- read_csv("datos/coin_Bitcoin2.csv")
+str(coin_Bitcoin)
+names(coin_Bitcoin)
+coins <- crypto_list(only_active=TRUE)
+a<-coins %>% 
+  slice_min(n=800, rank) %>% 
+  select(slug,rank, first_historical_data) %>% 
+  rename("Data" = "first_historical_data") %>%
+  mutate(Date=as.numeric(Data)) %>% mutate(ok=1) %>%
+  group_by(Date= floor_date(Data, "month")) %>%
+  summarize(nuevas= sum(ok))
+str(a)
+btc<-coin_Bitcoin %>% select(Name, Date, Close) %>%
+  mutate(Date=as.numeric(Date)) 
+
+
+p<- ggplot(btc, aes(x= Date, y= Close)) + 
+  geom_col(fill="black") + geom_hline(yintercept = 70000, color="orange") 
+
+p<-p + geom_point(data = a, 
+              aes(x = Date, y = 70000, size = nuevas),
+              color = "red",
+              alpha = 0.5) 
+p<- p + theme(plot.subtitle = element_text(family = "Times",
+    size = 10), panel.grid.major = element_line(colour = "aliceblue"),
+    panel.grid.minor = element_line(colour = "aliceblue"),
+    axis.title = element_text(family = "Times"),
+    axis.text = element_text(family = "Times"),
+    axis.text.x = element_text(size = 20,
+        colour = "aliceblue"), plot.title = element_text(family = "Times",
+        size = 17, face = "bold", vjust = 5),
+    panel.background = element_rect(fill = "aliceblue"),
+    plot.background = element_rect(fill = "aliceblue")) +labs(title = "¿Altcoins = moda?", x = "Tiempo",
+    y = "Precio BTC ($)", size = "Nuevas criptomonedas",
+    subtitle = "¿Existe correlación entre la aparición de nuevas criptomonedas (altcoins) y el precio del Bitcoin?")
+
+ggplotly(p)
+```
+
+<br>
+
+## 3.3 Criptomonedas con más volumen {.tabset}
+
+### <FONT COLOR="d3a46a">**Bar Chart Race**</FONT>
+
+Como vemos, las criptomonedas con más volumen no han permanecido fijas a lo largo del tiempo, sin embargo, sí que vemos como la primera posición la ocupó Bitcoin hasta que Tether se convirtió en la "ganadora".
+
+
+```{r, echo=FALSE}
+
+
+data_total <- read_csv("datos/data_total.csv")
+
+df<-data_total %>% select(Name,Volume,Date) %>%
+  rename(date = Date, id = Name, value = Volume) %>%
+  subset(date> "2013-12-02" & date < "2021-07-06") %>%
+  group_by(id, date = lubridate::floor_date(date, "month")) %>%
+  summarize(value = sum(value))
+  
+  
+data_alt<- data_total %>% filter(!Name== "Bitcoin") %>% 
+  filter(!Name== "Wrapped Bitcoin") 
+
+df_alt<-data_alt %>% select(Name,Volume,Date) %>%
+  rename(date = Date, id = Name, value = Volume) %>%
+  subset(date> "2013-12-02" & date < "2021-07-06") %>%
+  group_by(id, date = lubridate::floor_date(date, "month")) %>%
+  summarize(value = sum(value))
+
+
+df_race_1 <- df %>% arrange(date)
+
+robservable(
+  "https://observablehq.com/@juba/bar-chart-race",
+  include = c("viewof date", "chart", "draw", "styles"),
+  hide = "draw",
+  input = list(
+    data = df_race_1, 
+    title = "Evolución criptomonedas con más volumen",
+    subtitle = "Principales criptomonedas desde el 2013 hasta la actualidad",
+    source = "Fuente: Blockchain.com",
+    tickDuration = 600
+  ),
+  width = 1000,
+  height = 700,
+)
+
+```
+
+Este gráfico se llama "Bar chart race" y los datos usados son agrupaiones mensuales desde 2013 hasta la actualidad.
+
+Podemos ver además que Ethereum se ha acercado mucho a Bitcoin en los últimos años.
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, include=TRUE, eval=FALSE}
+
+
+data_total <- read_csv("datos/data_total.csv")
+
+df<-data_total %>% select(Name,Volume,Date) %>%
+  rename(date = Date, id = Name, value = Volume) %>%
+  subset(date> "2013-12-02" & date < "2021-07-06") %>%
+  group_by(id, date = lubridate::floor_date(date, "month")) %>%
+  summarize(value = sum(value))
+  
+  
+data_alt<- data_total %>% filter(!Name== "Bitcoin") %>% 
+  filter(!Name== "Wrapped Bitcoin") 
+
+df_alt<-data_alt %>% select(Name,Volume,Date) %>%
+  rename(date = Date, id = Name, value = Volume) %>%
+  subset(date> "2013-12-02" & date < "2021-07-06") %>%
+  group_by(id, date = lubridate::floor_date(date, "month")) %>%
+  summarize(value = sum(value))
+
+
+df_race_1 <- df %>% arrange(date)
+
+robservable(
+  "https://observablehq.com/@juba/bar-chart-race",
+  include = c("viewof date", "chart", "draw", "styles"),
+  hide = "draw",
+  input = list(
+    data = df_race_1, 
+    title = "Evolución criptomonedas con más volumen",
+    subtitle = "Principales criptomonedas desde el 2013 hasta la actualidad",
+    source = "Fuente: Blockchain.com",
+    tickDuration = 600
+  ),
+  width = 1000,
+  height = 700,
+)
+
+```
+
+<br>
+
+## 3.4 Capitalización de mercado {.tabset}
+
+### <FONT COLOR="d3a46a">**Tabla**</FONT>
+
+Sin embargo, que Tether sea la que más volumen mueve, no quiere decir que sea la más importante, podríamos fijarnos en otros indicadores para considerar esto.
+
+La capitalización bursátil (o market cap) mide el "tamaño" de una acción o divisa, o, en nuestro caso, criptomoneda. Simplemente es la cantidad de reservas de la criptomoneda en el mercado, multiplicado por su precio (es decir, Precio*Cantidad)
+
+Y aquí la cosa cambia, como podemos ver en la siguiente tabla:
+
+```{r, echo=FALSE}
+coin_Ethereum <- read_csv("datos/coin_Ethereum.csv")
+coin_Bitcoin <- read_csv("datos/coin_Bitcoin.csv")
+data_total <- read_csv("datos/data_total.csv")
+
+btc<- coin_Bitcoin %>% mutate(Date=as.Date(Date))
+btc<- coin_Bitcoin %>% mutate(ano = format(Date, "%Y")) %>%
+  group_by(ano) %>% summarise(mean_market= mean(Marketcap)) %>% 
+  mutate(crypto = "bitcoin")
+btc2<-coin_Bitcoin %>% select(Name,Close, Date) %>%
+  mutate(Close= Close/1000) %>% mutate(ano = format(Date, "%Y")) %>%
+  group_by(ano) %>% summarise(Close= mean(Close)) %>%
+  filter(ano %in% c(2015,2016,2017,2018,2019,2020,2021))
+
+eth<- coin_Ethereum %>% mutate(Date=as.Date(Date)) %>% 
+  mutate(ano = format(Date, "%Y")) %>%
+  group_by(ano) %>% 
+  summarise(mean_market= mean(Marketcap)) %>% 
+  mutate(crypto = "ethereum")
+
+
+resto<- data_total %>% mutate(Date=as.Date(Date)) %>% 
+  mutate(ano = format(Date, "%Y")) %>%
+  filter(!Name == "Bitcoin") %>% filter(!Name == "Ethereum") %>%
+  group_by(ano, Name) %>% mutate(media_anual = mean(Marketcap))
+
+dieciseis<-resto %>% filter(ano == "2016") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>% 
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2016") %>% mutate(Name = "alt")
+
+quince<-resto %>% filter(ano == "2015") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2015") %>% mutate(Name = "alt")
+
+diecisiete<-resto %>% filter(ano == "2017") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2017") %>% mutate(Name = "alt")
+
+diecinueve<-resto %>% filter(ano == "2019") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2019") %>% mutate(Name = "alt")
+
+veinte<-resto %>% filter(ano == "2020") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2020") %>% mutate(Name = "alt")
+
+dieciocho<-resto %>% filter(ano == "2018") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2018") %>% mutate(Name = "alt")
+
+veintiuno<-resto %>% filter(ano == "2021") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2021") %>% mutate(Name = "alt")
+
+x<-full_join(veinte,dieciocho)
+b<-full_join(dieciseis,quince)
+b<-full_join(b,x)
+c<-full_join(diecisiete,diecinueve)
+d<-full_join(b,veintiuno)
+e<-full_join(c,d) %>% rename("mean_market" = "suma") %>% 
+  select(mean_market,ano) %>% mutate(crypto = "alt")
+
+nofinal<-full_join(btc, eth) %>% filter(ano %in% c(2015,2016,2017, 2018,2019,2020,2021))
+final<- full_join(nofinal, e) %>% group_by(ano) %>% 
+  mutate(suma = sum(mean_market)) %>% 
+  mutate(mean_market2 = 100*mean_market/suma) 
+final2<-full_join(nofinal, e) %>% group_by(ano) %>% 
+  mutate(suma = sum(mean_market))
+
+pretabla<- final %>% group_by(ano) %>% 
+  summarise(lista = list(mean_market2))
+
+pretabla<- full_join(pretabla,btc2, by="ano")
+pretabla<-pretabla %>% mutate(Close = round(Close))
+pretabla<-pretabla %>% rename("Precio BTC (en miles, $)" = "Close")
+
+pal_stages <- c('#264653','#e9c46a','#e76f51')
+
+tabla1<- pretabla %>%
+  gt()%>%
+  gt_plt_bar_stack(
+    # Column with data
+    column=lista,
+    # Stacked barplot 
+    position = 'stack', 
+    # Set labels and color
+    labels = c("BTC", "ETH", "ALT"),
+    palette = pal_stages,
+    # Barplot width
+    width = 100) %>%
+  tab_header(title = "% de Marketcap por Crypto y Evolución del precio del Bitcoin")%>%
+  gt_theme_nytimes()
+tabla2<- tabla1 %>%
+  gtExtras::gt_fa_repeats(
+    column= `Precio BTC (en miles, $)`,
+    palette = "orange",
+    name = "bitcoin",
+    align='left'
+  )  %>% tab_style(style = list(cell_fill(color = "#F9E3D6")),
+                                locations = cells_body(rows = ano>3))
+
+tabla2
+
+```
+
+En esta tabla hemos comparado en primer lugar el porcentaje de Marketcap del total que pertenece a Bitcoin, a Ethereum y a todas las altcoins juntas. Podemos ver, que aunque Bitcoin sigue siendo la líder, poco a poco va perdiendo terreno que Ethereum y las altcoins van consiguiendo. 
+
+Como podemos ver, al haber crecido el interés en las criptomonedas en los últimos años, aunque ha variado el marketcap, el precio de Bitcoin no ha dejado de crecer.
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+coin_Ethereum <- read_csv("datos/coin_Ethereum.csv")
+coin_Bitcoin <- read_csv("datos/coin_Bitcoin.csv")
+data_total <- read_csv("datos/data_total.csv")
+
+btc<- coin_Bitcoin %>% mutate(Date=as.Date(Date))
+btc<- coin_Bitcoin %>% mutate(ano = format(Date, "%Y")) %>%
+  group_by(ano) %>% summarise(mean_market= mean(Marketcap)) %>% 
+  mutate(crypto = "bitcoin")
+btc2<-coin_Bitcoin %>% select(Name,Close, Date) %>%
+  mutate(Close= Close/1000) %>% mutate(ano = format(Date, "%Y")) %>%
+  group_by(ano) %>% summarise(Close= mean(Close)) %>%
+  filter(ano %in% c(2015,2016,2017,2018,2019,2020,2021))
+
+eth<- coin_Ethereum %>% mutate(Date=as.Date(Date)) %>% 
+  mutate(ano = format(Date, "%Y")) %>%
+  group_by(ano) %>% 
+  summarise(mean_market= mean(Marketcap)) %>% 
+  mutate(crypto = "ethereum")
+
+
+resto<- data_total %>% mutate(Date=as.Date(Date)) %>% 
+  mutate(ano = format(Date, "%Y")) %>%
+  filter(!Name == "Bitcoin") %>% filter(!Name == "Ethereum") %>%
+  group_by(ano, Name) %>% mutate(media_anual = mean(Marketcap))
+
+dieciseis<-resto %>% filter(ano == "2016") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>% 
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2016") %>% mutate(Name = "alt")
+
+quince<-resto %>% filter(ano == "2015") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2015") %>% mutate(Name = "alt")
+
+diecisiete<-resto %>% filter(ano == "2017") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2017") %>% mutate(Name = "alt")
+
+diecinueve<-resto %>% filter(ano == "2019") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2019") %>% mutate(Name = "alt")
+
+veinte<-resto %>% filter(ano == "2020") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2020") %>% mutate(Name = "alt")
+
+dieciocho<-resto %>% filter(ano == "2018") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2018") %>% mutate(Name = "alt")
+
+veintiuno<-resto %>% filter(ano == "2021") %>%
+  group_by(Name) %>% summarise(media_anual = mean(Marketcap)) %>%
+  summarise(suma= sum(media_anual)) %>%
+  mutate(ano = "2021") %>% mutate(Name = "alt")
+
+x<-full_join(veinte,dieciocho)
+b<-full_join(dieciseis,quince)
+b<-full_join(b,x)
+c<-full_join(diecisiete,diecinueve)
+d<-full_join(b,veintiuno)
+e<-full_join(c,d) %>% rename("mean_market" = "suma") %>% 
+  select(mean_market,ano) %>% mutate(crypto = "alt")
+
+nofinal<-full_join(btc, eth) %>% filter(ano %in% c(2015,2016,2017, 2018,2019,2020,2021))
+final<- full_join(nofinal, e) %>% group_by(ano) %>% 
+  mutate(suma = sum(mean_market)) %>% 
+  mutate(mean_market2 = 100*mean_market/suma) 
+final2<-full_join(nofinal, e) %>% group_by(ano) %>% 
+  mutate(suma = sum(mean_market))
+
+pretabla<- final %>% group_by(ano) %>% 
+  summarise(lista = list(mean_market2))
+
+pretabla<- full_join(pretabla,btc2, by="ano")
+pretabla<-pretabla %>% mutate(Close = round(Close))
+pretabla<-pretabla %>% rename("Precio BTC (en miles, $)" = "Close")
+
+pal_stages <- c('#264653','#e9c46a','#e76f51')
+
+tabla1<- pretabla %>%
+  gt()%>%
+  gt_plt_bar_stack(
+    # Column with data
+    column=lista,
+    # Stacked barplot 
+    position = 'stack', 
+    # Set labels and color
+    labels = c("BTC", "ETH", "ALT"),
+    palette = pal_stages,
+    # Barplot width
+    width = 100) %>%
+  tab_header(title = "% de Marketcap por Crypto y Evolución del precio del Bitcoin")%>%
+  gt_theme_nytimes()
+tabla2<- tabla1 %>%
+  gtExtras::gt_fa_repeats(
+    column= `Precio BTC (en miles, $)`,
+    palette = "orange",
+    name = "bitcoin",
+    align='left'
+  )  %>% tab_style(style = list(cell_fill(color = "#F9E3D6")),
+                                locations = cells_body(rows = ano>3))
+
+tabla2
+
+```
+
+# 4. Las criptomonedas en el mundo
+
+<br>
+
+## 4.1 ¿Quién posee las criptomonedas? {.tabset}
+
+### <FONT COLOR="d3a46a">**Mapa**</FONT>
+
+Otro análisis realizado ha sido ilustrar en un mapa, qué país tiene mayor porcentaje de personas poseedoras de criptomonedas. De aquí sacamos distintas conclusiones interesantes:
+
+```{r, echo=FALSE}
+knitr::include_graphics(here::here("Capturas", "plot3.png"))
+
+```
+
+En este mapa vemos varias cosas interesantes.
+En primer lugar, en la zona euro vemos cómo este porcentaje es bastante bajo (ya es relevante de por si el hecho de que todos los países de la Unión Europea tengan valores similares), una de las razones puede estar ligada a que la moneda (€) es bastante estable (sin embargo, en EEUU, la tasa es alta...) vemos que el caso de Gran Bretaña es similar al de la zona euro. 
+
+No resulta extraño, por tanto, que países de sudamerica como Venezuela tengan un porcentaje mayor, puesto que su moneda se devalúa a gran velocidad con la inflación y la gente decide invertir en otros activos con el ojetivo de mantener su poder adquisitivo. 
+
+Rusia también tiene una inflación mayor a la europea año tras año, pero allí las razones van más allá...
+
+<iframe src="https://www.eldiario.es/tecnologia/putin-partidario-aceptar-criptomonedas-metodo-pago_1_8394782.html" height="400" width="800"></iframe>
+
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+library(tmap)
+library(rnaturalearth)
+library(plotly)
+
+paisesss <- read_excel("datos/paisesss.xlsx")
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+world<- world %>% select(name, geometry,pop_est)
+paisesss<- paisesss%>% rename("pais"="País")
+
+antis<-anti_join(paisesss,world, by= c("pais" = "name"))
+
+b<- paisesss %>% mutate(pais = ifelse(pais=="USA","United States", pais)) %>%
+  mutate(pais = ifelse(pais=="South Korea","Korea", pais)) %>%
+  mutate(pais = ifelse(pais=="Dominican Republic","Dominican Rep.", pais)) %>%
+  mutate(pais = ifelse(pais=="Republic of Serbia","Serbia", pais)) %>%
+  mutate(pais = ifelse(pais=="Bosnia and Herzegovina","Bosnia and Herz.", pais)) %>%
+  mutate(pais = ifelse(pais=="Czech Republic","Czech Rep.", pais)) %>%
+  mutate(pais = ifelse(pais=="Ivory Coast","Côte d'Ivoire", pais)) %>%
+  mutate(pais = ifelse(pais=="The Bahamas","Bahamas", pais))
+
+anti_join(b,world, by= c("pais" = "name"))
+a<- full_join(b,world, by= c("pais" = "name")) 
+a<- a %>% mutate (number = as.numeric(number)) %>% mutate(percent = 100*number/pop_est) %>%
+  filter(!pais== "Antarctica") %>% filter(!pais=="Greenland")
+
+
+plot1<-ggplot(a, aes(geometry = geometry)) + geom_sf()
+
+
+plot2<- plot1 + geom_sf(aes(fill=percent)) +
+  scale_fill_viridis_c(option = "turbo", trans = "sqrt") 
+
+plot3<- plot2 + theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5), 
+              panel.background = element_rect(fill = "aliceblue")) + 
+  theme(axis.line = element_line(size = 0),
+        axis.ticks = element_line(colour = "gray14",size = 0, linetype = "dashed"),
+        panel.grid.major = element_line(colour = "aliceblue",size = 0), 
+        panel.grid.minor = element_line(colour = "aliceblue"))
+plot4<-plot3+labs(title = "Porcentaje de población poseedora de criptomonedas")+ theme(axis.line = element_line(size = 0, colour = "aliceblue"),
+              axis.ticks = element_line(colour = "aliceblue"),
+              panel.grid.major = element_line(size = 1.4),
+              axis.text.x = element_text(colour = "aliceblue"),
+              axis.text.y = element_text(size = 6, colour = "aliceblue"), 
+              legend.title = element_text(size = 11,face = "bold"), 
+              plot.background = element_rect(fill = "aliceblue"),
+              legend.background = element_rect(fill = "aliceblue"))
+
+ggplotly(plot4, width= 1080, height= 720)
+
+```
+
+
+<br>
+
+## 4.2 Tabla criptomonedas {.tabset}
+
+### <FONT COLOR="d3a46a">**Tabla**</FONT>
+
+Ahora que ya sabemos un poco más sobre criptomonedas, aquí mostramos una tabla en la que podemos ver más información acerca de las 500 criptomonedas más importantes
+
+```{r,echo=FALSE}
+coins <- crypto_list(only_active=TRUE)
+coin_hist <- crypto_history(coins, limit=300, start_date="20211130", end_date="20211130") %>%
+  filter(timestamp=="2021-11-30 23:59:59") %>% select(slug,symbol,close, volume)
+
+
+coin_info<- crypto_info(coins,limit=300)
+
+
+a<-coin_info %>% select(slug,urls, logo, category) %>% 
+  unnest(urls) %>% filter(name %in% c("reddit","twitter")) %>%
+  select(slug,url,logo)
+c<-full_join(a,coin_hist, by="slug") %>% mutate(close= round(close,2))
+
+c$url <- paste0("<a href='",c$url,"'>",c$url,"</a>")
+c$logo<- paste0("'<img src=", c$logo, "></img>'")
+datatable(c,escape=FALSE, class="cell-border stripe", extensions = c("Buttons","FixedColumns"),
+          options = list(dom = 'Blfrtip',
+                         fixedColumns=list(leftColumns=2),
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                         pageLength = 6, autoWidth = TRUE )) %>%
+  formatStyle("volume",
+              background = styleColorBar(c$volume, 'darkcyan'),
+              backgroundSize = '100% 90%',
+              backgroundRepeat = 'no-repeat',
+              backgroundPosition = 'center')
+
+```
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r,eval=FALSE, include=TRUE}
+coins <- crypto_list(only_active=TRUE)
+coin_hist <- crypto_history(coins, limit=500, start_date="20211130", end_date="20211130") %>%
+  filter(timestamp=="2021-11-30 23:59:59") %>% select(slug,symbol,close, volume)
+
+
+coin_info<- crypto_info(coins,limit=500)
+
+
+a<-coin_info %>% select(slug,urls, logo, category) %>% 
+  unnest(urls) %>% filter(name %in% c("reddit","twitter")) %>%
+  select(slug,url,logo)
+c<-full_join(a,coin_hist, by="slug") %>% mutate(close= round(close,2))
+
+c$url <- paste0("<a href='",c$url,"'>",c$url,"</a>")
+c$logo<- paste0("'<img src=", c$logo, "></img>'")
+datatable(c,escape=FALSE, class="cell-border stripe", extensions = c("Buttons","FixedColumns"),
+          options = list(dom = 'Blfrtip',
+                         fixedColumns=list(leftColumns=2),
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                         pageLength = 6, autoWidth = TRUE )) %>%
+  formatStyle("volume",
+              background = styleColorBar(c$volume, 'darkcyan'),
+              backgroundSize = '100% 90%',
+              backgroundRepeat = 'no-repeat',
+              backgroundPosition = 'center')
+
+```
+
+<br>
+
+# 5. Bitcoin 
+
+## 5.1 Evolución de los precios. {.tabset}
+
+### <FONT COLOR="d3a46a">**Evolución**</FONT>
+
+Así ha evolucionado en precio de Bitcoin en los últimos años:
+
+```{r, echo=FALSE}
+coin_Bitcoin <- read_csv("./datos/coin_Bitcoin.csv")
+BTC_image <- "https://cdn.pixabay.com/photo/2018/02/02/13/51/bitcoin-3125488_1280.png"
+a<-coin_Bitcoin %>% select(Name, Date, Close, Volume) %>% mutate(imagen = BTC_image)
+
+a$month <- floor_date(a$Date, "month")
+
+
+ggplot(a, aes(Date, Close)) + 
+  geom_path(aes(colour="goldenrod1")) + 
+  geom_point( aes(group=month, colour= "goldenrod1", alpha = 0.5)) +
+  geom_image(aes(image = BTC_image),
+             size = 0.06) +
+  transition_reveal(Date) +
+  theme(axis.line = element_line(colour = "chocolate1"),
+        panel.background = element_rect(fill = "#fbf7f0"),
+        plot.background = element_rect(fill = "#fbf7f0",
+                                       colour = "#fbf7f0")) +labs(y = "Precio") +
+  theme(legend.position = "none")
+```
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+coin_Bitcoin <- read_csv("./datos/coin_Bitcoin.csv")
+BTC_image <- "https://cdn.pixabay.com/photo/2018/02/02/13/51/bitcoin-3125488_1280.png"
+a<-coin_Bitcoin %>% select(Name, Date, Close, Volume) %>% mutate(imagen = BTC_image)
+
+a$month <- floor_date(a$Date, "month")
+
+
+ggplot(a, aes(Date, Close)) + 
+  geom_path(aes(colour="goldenrod1")) + 
+  geom_point( aes(group=month, colour= "goldenrod1", alpha = 0.5)) +
+  geom_image(aes(image = BTC_image),
+             size = 0.06) +
+  transition_reveal(Date) +
+  theme(axis.line = element_line(colour = "chocolate1"),
+        panel.background = element_rect(fill = "#fbf7f0"),
+        plot.background = element_rect(fill = "#fbf7f0",
+                                       colour = "#fbf7f0")) +labs(y = "Precio") +
+  theme(legend.position = "none")
+```
+
+### <FONT COLOR="d3a46a">**Evolución 2**</FONT>
+
+```{r, echo=FALSE}
+data_total2 <- rio::import(here::here("datos", "data_total2.csv"))
+BTC <- data_total2 %>% filter(Symbol == "BTC") %>% select(Date,Close)
+G2 <- BTC %>% ggplot() + geom_line(aes(Date,Close)) + scale_y_continuous(trans = "log10") + theme(panel.background = element_rect(fill = "#fbf7f0",colour = "#fbf7f0")) +labs(colour = "colour_up", fill = "fill_up") + theme(plot.background = element_rect(fill = "#fbf7f0"))
+G2
+```
+
+### <FONT COLOR="d3a46a">**Velas**</FONT>
+
+```{r, echo=FALSE}
+BTCcandle<- data_total2 %>% filter(Symbol == "BTC") %>% select(Date,Low,High,Open,Close)
+BTCcandlesemanal <- BTCcandle  %>% 
+    mutate(anio = format(Date, "%Y"),
+           dia_semana_num = format(Date, "%W")) %>% 
+    group_by(anio,dia_semana_num) %>% 
+    summarise(shigh = max(High), slow=min(Low),
+              Date = max(Date), sclose =last(Close), sopen=first(Open)) %>% filter(Date>as.Date("2017-01-01"))
+G3 <- BTCcandlesemanal %>% ggplot(aes(Date,sclose)) + geom_candlestick(aes(open = sopen, high = shigh, low = slow, close = sclose, colour_up="darkgreen", fill_up="darkgreen"))
+G3 + theme(panel.background = element_rect(fill = "#fbf7f0",
+    colour = "#fbf7f0")) +labs(colour = "colour_up", fill = "fill_up")
+```
+
+Aquí podemos ver un gráfico de velas de las últimas semanas:
+
+```{r, echo=FALSE}
+portfolio = c("BTC-USD")
+getSymbols(portfolio, src = "yahoo", from = "2011-01-01")
+
+
+chartSeries(`BTC-USD`,
+            type="candlesticks",
+            subset = "2021-6::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+
+```
+
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, include=TRUE, eval=FALSE}
+#Primero
+coin_Bitcoin <- read_csv("./datos/coin_Bitcoin.csv")
+BTC_image <- "https://cdn.pixabay.com/photo/2018/02/02/13/51/bitcoin-3125488_1280.png"
+a<-coin_Bitcoin %>% select(Name, Date, Close, Volume) %>% mutate(imagen = BTC_image)
+
+a$month <- floor_date(a$Date, "month")
+
+
+ggplot(a, aes(Date, Close)) + 
+  geom_path(aes(colour="goldenrod1")) + 
+  geom_point( aes(group=month, colour= "goldenrod1", alpha = 0.5)) +
+  geom_image(aes(image = BTC_image),
+             size = 0.06) +
+  transition_reveal(Date) +
+  theme(axis.line = element_line(colour = "chocolate1"),
+        panel.background = element_rect(fill = "#fbf7f0"),
+        plot.background = element_rect(fill = "#fbf7f0",
+                                       colour = "#fbf7f0")) +labs(y = "Precio") 
+
+#Segundo
+BTC <- data_total2 %>% filter(Symbol == "BTC") %>% select(Date,Close)
+G2 <- BTC %>% ggplot() + geom_line(aes(Date,Close)) + scale_y_continuous(trans = "log10") + theme(panel.background = element_rect(fill = "#fbf7f0",colour = "#fbf7f0")) +labs(colour = "colour_up", fill = "fill_up") + theme(plot.background = element_rect(fill = "#fbf7f0"))
+G2
+
+#Tercero
+BTCcandle<- data_total2 %>% filter(Symbol == "BTC") %>% select(Date,Low,High,Open,Close)
+BTCcandlesemanal <- BTCcandle  %>% 
+    mutate(anio = format(Date, "%Y"),
+           dia_semana_num = format(Date, "%W")) %>% 
+    group_by(anio,dia_semana_num) %>% 
+    summarise(shigh = max(High), slow=min(Low),
+              Date = max(Date), sclose =last(Close), sopen=first(Open)) %>% filter(Date>as.Date("2017-01-01"))
+G3 <- BTCcandlesemanal %>% ggplot(aes(Date,sclose)) + geom_candlestick(aes(open = sopen, high = shigh, low = slow, close = sclose, colour_up="darkgreen", fill_up="darkgreen"))
+G3 + theme(panel.background = element_rect(fill = "#fbf7f0",
+    colour = "#fbf7f0")) +labs(colour = "colour_up", fill = "fill_up")
+
+portfolio = c("BTC-USD")
+getSymbols(portfolio, src = "yahoo", from = "2011-01-01")
+
+
+#Cuarto
+chartSeries(`BTC-USD`,
+            type="candlesticks",
+            subset = "2021-6::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+
+```
+
+<br>
+
+## 5.2 Predicción del precio {.tabset}
+
+### <FONT COLOR="d3a46a">**Predicción**</FONT>
+
+Para "predecir" el precio hemos usado el paquete Prophet. El paquete Prophet fue creado por el equipo Data Science de Facebook y nos permite realizar análisis de tendencia, ciclos y estacionalidad, además de un pronóstico de precio.
+Esta predicción se hace teniendo en cuenta ciertos indicadores, como veremos más adelante, el bitcoin es muy volátil, pero esta predicción, bajo un error, se aproxima a la realidad con bastante acierto.
+
+```{r, echo=FALSE}
+library(prophet)
+library(rio)
+library(ggplot2)
+library(tidyverse)
+library(TTR)
+library(quantmod)
+library(tidyr)
+library(readr)
+library(prophet)
+library(PerformanceAnalytics)
+data_btc <- data_total %>% filter(Name == "Bitcoin")
+
+data_btc <- data_btc %>% select(Date, Close)
+
+data_btc <- data_btc %>% rename(ds = Date, y = Close)
+
+modelo2 <- prophet(data_btc)
+horizonte2 <- make_future_dataframe(modelo2, periods = 365)
+
+
+forecast2 <- predict(modelo2, horizonte2)
+tail(forecast2[c('ds','yhat','yhat_lower','yhat_upper')])
+
+#para observar los datos de la predicción de forma intuitiva mediante un grafico utilizaremos la instrucción dyplot.prophet.
+
+gr_predicc2 <- dyplot.prophet(modelo2, forecast2, main = "Prediccion Precio Bitcoin")
+gr_predicc2
+
+```
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+library(prophet)
+library(rio)
+library(ggplot2)
+library(tidyverse)
+library(TTR)
+library(quantmod)
+library(tidyr)
+library(readr)
+library(prophet)
+library(PerformanceAnalytics)
+data_btc <- data_total %>% filter(Name == "Bitcoin")
+
+data_btc <- data_btc %>% select(Date, Close)
+
+data_btc <- data_btc %>% rename(ds = Date, y = Close)
+
+modelo2 <- prophet(data_btc)
+horizonte2 <- make_future_dataframe(modelo2, periods = 365)
+
+
+forecast2 <- predict(modelo2, horizonte2)
+tail(forecast2[c('ds','yhat','yhat_lower','yhat_upper')])
+
+#para observar los datos de la predicción de forma intuitiva mediante un grafico utilizaremos la instrucción dyplot.prophet.
+
+gr_predicc2 <- dyplot.prophet(modelo2, forecast2, main = "Prediccion Precio Bitcoin")
+gr_predicc2
+
+```
+
+<br>
+
+# 6. Análisis técnico. 
+
+## 6.1 BITCOIN {.tabset}
+
+### <FONT COLOR="d3a46a">**Ciclos**</FONT>
+
+Se puede decir que los ciclos de bitcoin los marcan los halvings, que son fraccionamientos del volumen de BTC a la mitad. Ha habido halvings en 2012, 2016 y 2020, y aquí podemos observar los dos últimos:
+
+```{r, echo=FALSE}
+G4 <- G2+ geom_vline(xintercept=unclass(as.Date("2016-07-09")))+ geom_vline(xintercept=unclass(as.Date("2020-05-11")))+ annotate(geom = "text", x = as.Date("2016-07-09"), y = 50000, label = "2ºHalving:9-7-2016", size = 3)+ annotate(geom = "text", x = as.Date("2020-03-01"), y = 50000, label = "3ºHalving:11-5-2020", size = 3) + theme(panel.background = element_rect(fill = "#fbf7f0",colour = "#fbf7f0")) +labs(colour = "colour_up", fill = "fill_up") + theme(plot.background = element_rect(fill = "#fbf7f0"))
+G4
+
+
+```
+
+Después de cada halving podemos observar una subida más constante del precio, lo cual es coherente con el hecho de que la oferta es reducida después de cada uno. Tras la subida se puede apreciar una estabilización del precio en forma de U. El único ciclo que se muestra completamente es el de 2016-2020.
+
+```{r, echo=FALSE}
+G5 <- G4 +
+annotate("segment", x = as.Date("2013-04-29"), xend = as.Date("2013-10-01"), y = 200, yend = 900, colour = "blue") +
+annotate("segment", x = as.Date("2014-01-20"), xend = as.Date("2016-04-01"), y = 600, yend = 600, colour = "blue") +
+annotate("segment", x = as.Date("2016-06-01"), xend = as.Date("2017-11-15"), y = 1200, yend = 20000, colour = "blue") +
+annotate("segment", x = as.Date("2018-02-15"), xend = as.Date("2020-05-05"), y = 9000, yend = 9000, colour = "blue") +
+annotate("segment", x = as.Date("2020-05-31"), xend = as.Date("2021-03-05"), y = 15000 , yend = 75000, colour = "blue")
+G5
+
+```
+
+
+### <FONT COLOR="d3a46a">**Media móvil**</FONT>
+
+El mercado puede subestimar o infravalorar un activo dependiendo del sentimiento de mercado (si la gente es optimista o pesimista). Para corregir estos sentimientos e intentar estimar el valor intrínseco del activo usamos las medias móviles, que eliminan fluctuaciones a corto plazo facilitando así la observación de tendencias a largo plazo. La media móvil de 20 periodos es la más usada. Es la media del precio en los últimos 20 periodos (20 semanas).
+
+```{r, echo=FALSE}
+
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addSMA()
+
+
+```
+Como se puede observar, cuando Bitcoin está por encima de la media; está subiendo, y cuando está por debajo; está bajando.
+
+### <FONT COLOR="d3a46a">**RELATIVE STRENGHT INDEX**</FONT>
+
+El RSI es un indicador de tipo oscilador que refleja la fuerza relativa de los movimientos alcistas, en comparación con los movimientos bajistas. Es utilizado por los traders para medir la fuerza de una tendencia e identificar señales de fin de tendencia.
+
+RSI = Media móvil exponencial de 'N' períodos alcistas / Media móvil exponencial de 'N' períodos bajistas (en valor absoluto)
+
+Tiene un valor de 0 a 100, si esta por encima de 70 indica sobrecompra (señal de venta) y si esta por debajo de 30 indica sobreventa (señal de compra).
+
+```{r, echo=FALSE}
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addRSI()
+
+```
+
+### <FONT COLOR="d3a46a">**MACD**</FONT>
+
+MOVING AVERAGE CONVERGENCE DIVERGENCE:
+Las bandas de Bollinger son una técnica muy popular. Muchos traders creen que cuanto más se acercan los precios a la banda superior, más sobrecomprado está el mercado, y cuanto más se acercan los precios a la banda inferior, más sobrevendido es el mercado. 
+En el gráfico que se muestra a continuación, las Bandas de Bollinger abarcan la MMS de 20 días del Bitcoin con una banda superior e inferior junto con los movimientos diarios del precio. Debido a que la desviación estándar es una medida de volatilidad, cuando los mercados se vuelven más volátiles, las bandas se ensanchan; durante períodos menos volátiles, las bandas se contraen.
+
+```{r, echo=FALSE}
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addMACD()
+
+```
+
+### <FONT COLOR="d3a46a">**Momentum**</FONT>
+
+El Momentum (momento) es un indicador utilizado en el análisis técnico, que mide la velocidad con la que varía el precio de una acción (hacia arriba o hacia abajo), en un período de tiempo determinado.  Viene a ser como la aceleración. Si los precios varían en la misma cantidad todos los días (mantienen la misma velocidad) el momentum es cero. Si los precios suben cada día más —se aceleran— el momentum es positivo (si bajan cada día más, el momentum sería negativo).
+
+```{r, echo=FALSE}
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addMomentum()
+
+```
+
+La señal de compra surge cuando el impulso cambia de negativo a positivo.
+La señal de venta surge cuando el impulso cambia de positivo a negativo.
+
+<br>
+
+### <FONT COLOR="d3a46a">**Código de los indicadores**</FONT>
+
+```{r, include=TRUE, eval=FALSE}
+
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addSMA()
+
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addRSI()
+
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addMACD()
+
+chartSeries(datos_analisis_btc,
+            type="candlesticks",
+            subset = "2018-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addMomentum()
+
+```
+
+## 6.2 Gráfico final y tendencias {.tabset}
+
+### <FONT COLOR="d3a46a">**Gráfico**</FONT>
+
+```{r, echo=FALSE}
+
+addEMA(n=30,on=1,col = "blue")
+addEMA(n=200,on=1,col = "black")
+addRSI()
+addMACD()
+
+```
+
+### <FONT COLOR="d3a46a">**Tendencias**</FONT>
+
+Cogemos el modelo1 y el forecast 1 para, a traves de la instruccion prophet_plot_componentes obtener un grafico que nos muestra algunas tendencias interesantes.
+
+```{r, echo=FALSE}
+tendencias <- prophet_plot_components(modelo1, forecast1)
+tendencias 
+
+```
+
+Podemos ver cómo el BTC suele subir entre los meses de abril y junio.
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+tendencias <- prophet_plot_components(modelo1, forecast1)
+tendencias 
+
+```
+
+<br>
+
+
+# 7. Ethereum
+
+## 7.1. Evolución de los precios. {.tabset}
+
+### <FONT COLOR="d3a46a">**Evolución**</FONT>
+
+```{r, echo=FALSE}
+coin_ethereum <- read_csv("./datos/coin_ethereum.csv")
+ETH_image <- "https://cdn.pixabay.com/photo/2021/12/03/10/32/ethereum-6842405_1280.png"
+a<-coin_ethereum %>% select(Name, Date, Close, Volume) %>% mutate(imagen = ETH_image)
+
+a$month <- floor_date(a$Date, "month")
+
+
+ggplot(a, aes(Date, Close)) + 
+  geom_path(aes(colour="goldenrod1")) + 
+  geom_point( aes(group=month, colour= "goldenrod1", alpha = 0.5)) +
+  geom_image(aes(image = ETH_image),
+             size = 0.06) +
+  transition_reveal(Date) +
+  theme(axis.line = element_line(colour = "chocolate1"),
+        panel.background = element_rect(fill = "#fbf7f0"),
+        plot.background = element_rect(fill = "#fbf7f0",
+                                       colour = "#fbf7f0")) +labs(y = "Precio") +
+  theme(legend.position = "none")
+```
+
+
+### <FONT COLOR="d3a46a">**Velas**</FONT>
+
+```{r}
+chartSeries(`ETH-USD`,
+            type="candlesticks",
+            subset = "2021-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+```
+
+
+## 7.2 Predicción del precio {.tabset}
+
+### <FONT COLOR="d3a46a">**Predicción**</FONT>
+
+Tal y como hicimos anteriormente con el Bitcoin, usamos el paquete Prophet para predecir el precio en el futuro.
+
+```{r, echo=FALSE}
+
+portfolio = c("ETH-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2018-01-01")
+
+datos_tecnico_eth <- `ETH-USD`
+
+portfolio = c("BTC-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2018-01-01")
+
+datos_analisis_btc <- `BTC-USD`
+
+#Prediccion de precio Prophet
+
+
+data_total <- read_csv("./datos/data_total.csv")
+
+data_eth <- data_total %>% filter(Name == "Ethereum")
+
+data_eth <- data_eth %>% select(Date, Close)
+
+data_eth <- data_eth %>% rename(ds = Date, y = Close)
+
+modelo1 <- prophet(data_eth)
+horizonte1 <- make_future_dataframe(modelo1, periods = 365)
+
+forecast1 <- predict(modelo1, horizonte1)
+
+gr_predicc <- dyplot.prophet(modelo1, forecast1, main = "Prediccion Precio Ethereum")
+gr_predicc
+
+```
+
+### <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+#Evolución del precio
+
+coin_ethereum <- read_csv("./datos/coin_ethereum.csv")
+ETH_image <- "https://cdn.pixabay.com/photo/2021/12/03/10/32/ethereum-6842405_1280.png"
+a<-coin_ethereum %>% select(Name, Date, Close, Volume) %>% mutate(imagen = ETH_image)
+
+a$month <- floor_date(a$Date, "month")
+
+
+ggplot(a, aes(Date, Close)) + 
+  geom_path(aes(colour="goldenrod1")) + 
+  geom_point( aes(group=month, colour= "goldenrod1", alpha = 0.5)) +
+  geom_image(aes(image = ETH_image),
+             size = 0.06) +
+  transition_reveal(Date) +
+  theme(axis.line = element_line(colour = "chocolate1"),
+        panel.background = element_rect(fill = "#fbf7f0"),
+        plot.background = element_rect(fill = "#fbf7f0",
+                                       colour = "#fbf7f0")) +labs(y = "Precio") +
+  theme(legend.position = "none")
+
+#Predicción del precio
+
+portfolio = c("ETH-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2018-01-01")
+
+datos_tecnico_eth <- `ETH-USD`
+
+portfolio = c("BTC-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2018-01-01")
+
+datos_analisis_btc <- `BTC-USD`
+
+#Prediccion de precio Prophet
+
+
+data_total <- read_csv("./datos/data_total.csv")
+
+data_eth <- data_total %>% filter(Name == "Ethereum")
+
+data_eth <- data_eth %>% select(Date, Close)
+
+data_eth <- data_eth %>% rename(ds = Date, y = Close)
+
+modelo1 <- prophet(data_eth)
+horizonte1 <- make_future_dataframe(modelo1, periods = 365)
+
+forecast1 <- predict(modelo1, horizonte1)
+
+gr_predicc <- dyplot.prophet(modelo1, forecast1, main = "Prediccion Precio Ethereum")
+gr_predicc
+
+
+```
+
+# 8. Análisis técnico {.tabset}
+
+## <FONT COLOR="d3a46a">**Medias móviles**</FONT>
+
+```{r, echo=FALSE}
+portfolio = c("ETH-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2017-01-01")
+
+#grafico con EMAs
+chartSeries(`ETH-USD`,
+            type="candlesticks",
+            subset = "2021-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addEMA(n=30,on=1,col = "blue")
+addEMA(n=200,on=1,col = "black")
+
+```
+
+## <FONT COLOR="d3a46a">**Bandas de Bollinger**</FONT>
+
+Las bandas de Bollinger son una técnica muy popular. Muchos traders creen que cuanto más se acercan los precios a la banda superior, más sobrecomprado está el mercado, y cuanto más se acercan los precios a la banda inferior, más sobrevendido es el mercado. 
+
+En el gráfico que se muestra a continuación, las Bandas de Bollinger abarcan la MMS de 20 días del Bitcoin con una banda superior e inferior junto con los movimientos diarios del precio. Debido a que la desviación estándar es una medida de volatilidad, cuando los mercados se vuelven más volátiles, las bandas se ensanchan; durante períodos menos volátiles, las bandas se contraen.
+
+```{r, echo=FALSE}
+
+addBBands(n=20,sd=2)
+
+```
+
+## <FONT COLOR="d3a46a">**RSIr**</FONT>
+
+Añadimos también el RSI que vimos anteriormente:
+
+```{r, echo=FALSE}
+addRSI()
+```
+
+## <FONT COLOR="d3a46a">**MACD**</FONT>
+
+Divergencia de convergencia de la media movil (MACD)
+
+Es un indicador de impulso que sigue la tendencia y muestra la relación entre dos medias móviles del precio de un valor. El MACD se calcula restando la media móvil exponencial (EMA) de 26 períodos de la EMA de 12 períodos.
+ 
+El resultado de ese cálculo es la línea MACD. Una EMA de nueve días del MACD llamada “línea de señal” se traza luego en la parte superior de la línea MACD, que puede funcionar como un disparador de señales de compra y venta. Los operadores pueden comprar el valor cuando el MACD cruza por encima de su línea de señal y vender, o vender, el valor cuando el MACD cruza por debajo de la línea de señal.
+
+```{r, echo=FALSE}
+#graficos con MACD
+
+chartSeries(`ETH-USD`,
+            type="candlesticks",
+            subset = "2021-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addMACD()
+
+```
+
+## <FONT COLOR="d3a46a">**Momentum**</FONT>
+
+El momentum es la velocidad o velocidad de los cambios de precio en una acción, valor o instrumento negociable. Momentum muestra la tasa de cambio en el movimiento de precios durante un período de tiempo para ayudar a los inversores a determinar la fuerza de una tendencia.
+
+```{r, echo=FALSE}
+
+#graficos con momentum
+#Calculamos el impulso de 2 días en función del precio de cierre de Bitcoin
+#La señal de compra surge cuando el impulso cambia de negativo a positivo.
+#La señal de venta surge cuando el impulso cambia de positivo a negativo.
+
+addMomentum(n=1)
+
+```
+
+Calculamos el impulso de 2 días en función del precio de cierre de Bitcoin
+La señal de compra surge cuando el impulso cambia de negativo a positivo.
+La señal de venta surge cuando el impulso cambia de positivo a negativo.
+
+## <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, include=TRUE, eval=FALSE}
+
+#Medias móviles 
+
+portfolio = c("ETH-USD")
+datos <- getSymbols(portfolio, src = "yahoo", from = "2017-01-01")
+
+#grafico con EMAs
+chartSeries(`ETH-USD`,
+            type="candlesticks",
+            subset = "2021-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addEMA(n=30,on=1,col = "blue")
+addEMA(n=200,on=1,col = "black")
+
+#Bandas
+
+addBBands(n=20,sd=2)
+
+#RSI
+
+addRSI()
+
+#MACD
+
+chartSeries(`ETH-USD`,
+            type="candlesticks",
+            subset = "2021-01::2021-11",
+            up.col = "green",
+            down.col = "red",
+            theme=chartTheme("white"))
+addMACD()
+
+#Momentum
+addMomentum(n=1)
+
+```
+
+
+## <FONT COLOR="d3a46a">**Precio respecto de la media**</FONT>
+```{r,echo=FALSE}
+
+BTCmovil <- BTC %>% mutate(media_movil = roll_mean(Close, n = 140, fill = NA, align = "right"))
+
+BTCvarianza <- BTCmovil %>% mutate(varianza=Close/media_movil)
+
+G8 <- BTCvarianza %>% ggplot() + geom_line(aes(Date,varianza))+ theme(panel.background = element_rect(fill = "#fbf7f0",colour = "#fbf7f0")) +labs(colour = "colour_up", fill = "fill_up") + theme(plot.background = element_rect(fill = "#fbf7f0"))
+
+G8
+```
+
+Cuando Bitcoin está por encima de la media (subiendo), el valor de esta extensión es mayor que 1. Cuando Bitcoin está por debajo de la media (bajando), el valor de esta extensión está entre 0 y 1. Por tanto,  los puntos óptimos para comprar son los mínimos observados en el rango entre 0 y 1, y los puntos óptimos para vender son los picos que estén por encima de 1.
+
+Podemos observar que la varianza está en descenso, por lo que para que bitcoin se estabilice tiene que seguir subiendo como ha estado haciendo
+
+```{r,echo=FALSE}
+G9 <- G8 + annotate("segment", x = as.Date("2013-12-15"), xend = as.Date("2021-06-01"), y = 5.5, yend = 2.6, colour = "blue")
+G9
+```
+
+Mientras Bitcoin tiene esta varianza, ¿cuánto varían las otras monedas?
+
+```{r,echo=FALSE}
+ALT <- data_total2 %>% filter(Symbol %in% c("BTC","DOGE", "BNB", "ADA", "LINK","ATOM", "CRO", "EOS")) %>% select(Date,Close,Symbol)
+ALTmovil <- ALT %>% mutate(media_movil = roll_mean(Close, n = 140, fill = NA, align = "right"))
+ALTvarianza <- ALTmovil %>% mutate(varianza=Close/media_movil)
+
+
+BTC2 <- data_total2 %>% filter(Symbol == "BTC") %>% select(Date,Close, Symbol) %>% mutate(media_movil = roll_mean(Close, n = 140, fill = NA, align = "right"))%>% mutate(varianza=Close/media_movil)
+BTC2
+
+G10 <- ggplot(ALTvarianza, aes(Date,varianza)) + geom_line() + geom_line(data=BTC2, aes(color=Symbol)) + theme(panel.background = element_rect(fill = "#fbf7f0",colour = "#fbf7f0")) +labs(colour = "colour_up", fill = "fill_up") + theme(plot.background = element_rect(fill = "#fbf7f0"))
+G10
+
+```
+
+
+
+# 9. Criptomonedas, ¿Valor refugio? {.tabset}
+
+Uno de los comentarios que uno escucha de las criptomonedas es que son un valor refugio, ¿pero es esto cierto? Un activo refugio es aquel que suele tener poca volatilidad y cuyo precio suele aumentar cuando el crecimiento económico se contrae y existe incertidumbre.
+Para poder dar una respuesta vamos a analizar la volatilidad del ethereum mediante diversos indicadores y la compararemos con los mismos indicadores pero del índice SP500.
+
+Antes de todo es saber que es la volatilidad y cómo medirla. Definimos la volatilidad como la fluctuación del precio de un activo. Aunque en el mundo de la inversión, la definimos como la variación del precio de un activo con respecto a su media histórica. 
+Para medirla se suelen usar varios indicadores, pero nosotros lo haremos a través de la desviación típica. 
+
+Antes de comenzar debemos explicar una cosa: Todos los gráficos que veremos a partir en este apartado se actualizarán diariamente con los nuevos datos de Bitcoin, Ethereum... De tal forma que cada día que veamos este trabajo veremos un análisis diferente.
+
+
+## <FONT COLOR="d3a46a">**Retornos**</FONT>
+
+```{r, echo=FALSE}
+#Lo primero de todo es obtener los datos (aunque los del ETH ya los tenemos gracias al análisis técnico realizado anteriormente. Lo segundo seleccionamos los datos del precio de cierre.
+
+getSymbols("^GSPC", src = "yahoo", from = "2017-01-01")
+ETH <- `ETH-USD`[,"ETH-USD.Close"]
+SP500 <- `GSPC`[,"GSPC.Close"]
+
+#Segundo, debemos obtener los retornos (nosotros usamos los retornos simples) del ethereum, ya que calcularemos y mediremos la desviación estándar y la volatilidad de estos. Los retornos simples sa calculan restando al precio actual el precio anterior y diviendolo entre el precio anterior . Para ello utilizaremos una instrucción que lo hace de forma automática:
+
+retorno_eth <- na.omit(Return.calculate(ETH))
+retorno_SP500 <- na.omit(Return.calculate(SP500))
+
+#los podemos ver en un gráfico mediante la siguiente instrucción:
+
+graf_ret_eth <- plot.xts(retorno_eth, main = "Retorno diario simple ETH", ylab = "ETH-USD.Close")
+graf_ret_eth
+
+graf_ret_SP <- plot.xts(retorno_SP500, main = "Retorno diario simple SP500", ylab = "GSPC.Close")
+graf_ret_SP
+
+```
+Vemos como los máximos retornos desde el 2015 tanto positivos como negativos del S&P fueron de alrededor de un 1%y un -1,5%. Sin embargo vemos como los del ethereum son mucho más grandes, habiendo retornos de más del 2,5% e incluso del 4%, lo que es un indicio de una mayor volatilidad del ethereum.
+
+## <FONT COLOR="d3a46a">**Desviación estándar**</FONT>
+
+Ahora calcularemos la desviación estándar anualizada de estos retornos. Para anualizar la desv. estandar del eth multiplicamos la desviacion de los retornos por la raiz cuadrada de 365 (los dias que cotiza el ethereum).
+
+```{r,echo=FALSE}
+ 
+desv_eth <- sd(retorno_eth)*sqrt(365)
+
+
+#En cambio, para calcular la del SP, nos basta la instrucción StdDev.annualized, esta hace exactamente lo mismo que la formula anterior, pero multiplica la desviacion de los retornos por la raiz de 252, que son el numero de dias que cotiza el SP (la bolsa “cierra” los findes de semana y festivos, las criptomonedas no lo hacen.)
+
+desv_SP500 <- StdDev.annualized(retorno_SP500)
+
+ 
+sdf<- as.data.frame(c(desv_eth,desv_SP500)) %>% 
+  mutate(variable= c("ETH", "S&P")) %>% pivot_wider(names_from = "variable", values_from = "c(desv_eth, desv_SP500)")
+
+library(gt)
+
+sdf %>% gt() %>% tab_options(heading.background.color = "#fbf7f0") %>% tab_options(heading.title.font.size = 15, heading.subtitle.font.size = 13,  column_labels.font.weight =  "bold")
+
+```
+
+En esta tabla vemos el valor de la desviación estándar para ETH y para el índice S&P, esta tabla se actualiza diariamente, por lo que cada día veremos unos valores distintos. Da igual el día que veamos esto, que siempre observamos un valor de ETH muy superior al de S&P
+A mayor desviación típica, mayor variación del precio entorno a la media que puede alcanzar un activo, por ende, mayor volatilidad. Vemos como el eth es mucho más volátil.
+
+
+## <FONT COLOR="d3a46a">**Drawdown**</FONT>
+
+Por ultimo  calcularemos el drawdown y lo veremos en un gráfico, para no tener un solo indicador de la volatilidad y poder ser así más precisos y tener más seguridad sobre la información.
+
+El Drawdown lo definimos como la pérdida porcentual desde el último máximo marcado por el precio del activo. Por ejemplo, si el último máximo fue de 70 dólares y ahora el precio es de 35 dólares, nuestro drawdown es del 50%, si mañana nuestro precio es de 50 dólares, nuestro drawdown será del 28,5%. Obviamente si pasado mañana marcamos un nuevo máximo histórico, por ejemplo 80 dólares, nuestro drawdown será del 0% al no haber un precio máximo anterior, y el máximo de referencia para los próximos down sides serán esos 80$, hasta que estos se vuelvan a superar. Obviamente a mayores drawdowns, más volátil es el activo.
+
+```{r, echo=FALSE}
+graf_down_eth <- chart.Drawdown(retorno_eth)
+graf_down_eth
+
+graf_dow_SP <- chart.Drawdown(retorno_SP500)
+graf_dow_SP
+
+```
+Vemos como el drawdown máximo del SP es alrededor del 35% (debido al confinamiento), mientras que los del Ethereum vemos cómo son superiores incluso al 80%.
+
+Con lo cual, viendo estos datos podemos deducir que las criptomonedas son volátiles, al menos más que el SP500, con lo cual aún no las podemos considerar activos refugios.
+
+<br>
+
+## <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, include=TRUE, eval=FALSE}
+#Lo primero de todo es obtener los datos (aunque los del ETH ya los tenemos gracias al análisis técnico realizado anteriormente. Lo segundo seleccionamos los datos del precio de cierre.
+
+getSymbols("^GSPC", src = "yahoo", from = "2017-01-01")
+ETH <- `ETH-USD`[,"ETH-USD.Close"]
+SP500 <- `GSPC`[,"GSPC.Close"]
+
+#Segundo, debemos obtener los retornos (nosotros usamos los retornos simples) del ethereum, ya que calcularemos y mediremos la desviación estándar y la volatilidad de estos. Los retornos simples sa calculan restando al precio actual el precio anterior y diviendolo entre el precio anterior . Para ello utilizaremos una instrucción que lo hace de forma automática:
+
+retorno_eth <- na.omit(Return.calculate(ETH))
+retorno_SP500 <- na.omit(Return.calculate(SP500))
+
+#los podemos ver en un gráfico mediante la siguiente instrucción:
+
+graf_ret_eth <- plot.xts(retorno_eth, main = "Retorno diario simple ETH", ylab = "ETH-USD.Close")
+graf_ret_eth
+
+graf_ret_SP <- plot.xts(retorno_SP500, main = "Retorno diario simple SP500", ylab = "GSPC.Close")
+graf_ret_SP
+
+desv_eth <- sd(retorno_eth)*sqrt(365)
+
+
+#En cambio, para calcular la del SP, nos basta la instrucción StdDev.annualized, esta hace exactamente lo mismo que la formula anterior, pero multiplica la desviacion de los retornos por la raiz de 252, que son el numero de dias que cotiza el SP (la bolsa “cierra” los findes de semana y festivos, las criptomonedas no lo hacen.)
+
+desv_SP500 <- StdDev.annualized(retorno_SP500)
+
+ 
+sdf<- as.data.frame(c(desv_eth,desv_SP500)) %>% 
+  mutate(variable= c("ETH", "S&P")) %>% pivot_wider(names_from = "variable", values_from = "c(desv_eth, desv_SP500)")
+
+library(gt)
+
+sdf %>% gt() %>% tab_options(heading.background.color = "#fbf7f0") %>% tab_options(heading.title.font.size = 15, heading.subtitle.font.size = 13,  column_labels.font.weight =  "bold")
+
+graf_down_eth <- chart.Drawdown(retorno_eth)
+graf_down_eth
+
+graf_dow_SP <- chart.Drawdown(retorno_SP500)
+graf_dow_SP
+
+```
+
+<br>
+
+# 10. Correlación entre criptomonedas {.tabset}
+
+## <FONT COLOR="d3a46a">**Beta (correlación) del retorno diario de altcoins respecto a BTC**</FONT>
+
+
+Todos hemos oído hablar de bitcoin, ya que esta es la criptomoneda más popular y la que está llamada a ser el “dinero del futuro”, sin embargo, no podemos olvidar que existen muchas más criptomonedas.
+
+En este apartado, nos vamos a centrar en analizar si bitcoin influye o “arrastra a las demás criptomonedas o altcoins”. (Una altcoin es una criptomoneda de baja capitalización y que suele ser muy volátil. Lo haremos a través de la beta de bitcoin y las altcoins cardano, solana, iota, dogecoin, terra y Polkadot.
+
+La beta la definimos como el tanto % que sube o baja un activo respecto a un aumento de 1% del activo de referencia (este suele ser un índice cuando analizamos acciones, por ejemplo el SP500 o el Nasdaq, en nuestro caso la referencia será bitcoin).
+
+```{r, echo=FALSE}
+#Primero descargamos los datos de yahoo finance a traves de getSymbols gracias al paquete quantmod. Analizaremos los datos de este último año.
+
+l<-getSymbols("BTC-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("ADA-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("SOL1-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("MIOTA-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("DOGE-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("LUNA1-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("DOT1-USD", src = "yahoo", from = "2021-01-01")
+
+#Segundo seleccionamos el precio de cierre y calculamos los retornos simples. (La estimación de la beta de un activo debe hacerse sobre los retornos, no sobre su precio).
+
+BTC <- `BTC-USD`[,"BTC-USD.Close"]
+
+ADA <- `ADA-USD`[,"ADA-USD.Close"]
+
+SOL <- `SOL1-USD`[,"SOL1-USD.Close"]
+
+IOTA <- `MIOTA-USD`[,"MIOTA-USD.Close"]
+
+DOGE <- `DOGE-USD`[,"DOGE-USD.Close"]
+
+TERRA <- `LUNA1-USD`[,"LUNA1-USD.Close"]
+
+POLKA <- `DOT1-USD`[,"DOT1-USD.Close"]
+
+
+retorno_btc_corr <- na.omit(Return.calculate(BTC))
+
+retorno_ada_corr <- na.omit(Return.calculate(ADA))
+
+retorno_sol_corr <- na.omit(Return.calculate(SOL))
+
+retorno_iota_corr <- na.omit(Return.calculate(IOTA))
+
+retorno_doge_corr <- na.omit(Return.calculate(DOGE))
+
+retorno_terra_corr <- na.omit(Return.calculate(TERRA))
+
+retorno_polka_corr <- na.omit(Return.calculate(POLKA))
+
+#Ahora solo nos queda calcular la beta
+```
+
+```{r, echo=FALSE}
+beta_ada <- CAPM.beta(retorno_ada_corr, retorno_btc_corr)
+
+beta_sol <- CAPM.beta(retorno_sol_corr, retorno_btc_corr)
+
+beta_iota <- CAPM.beta(retorno_iota_corr, retorno_btc_corr)
+
+beta_doge <- CAPM.beta(retorno_doge_corr, retorno_btc_corr)
+
+beta_terra <- CAPM.beta(retorno_terra_corr, retorno_btc_corr)
+
+beta_terra_df <- as.data.frame(beta_terra)
+
+beta_polka <- CAPM.beta(retorno_polka_corr, retorno_btc_corr)
+beta_polka_df <- as.data.frame(beta_polka)
+
+```
+
+
+Por cada 1% que aumenta el btc, ADA aumenta un 0,92%.
+Por cada 1% que aumenta el btc, SOL aumenta un 0,77%
+Por cada 1% que aumenta el btc, IOT aumenta un 1,16%
+Por cada 1% que aumenta el btc, DOGE aumenta un 1,4%
+Por cada 1% que aumenta el btc, terra aumenta un 1,21%
+Por cada 1% que aumenta el btc, polkadot aumenta un 1,23%
+
+```{r, echo=FALSE}
+
+df_ada <- as.data.frame(beta_ada)
+df_sol <- as.data.frame(beta_sol)
+df_iota <- as.data.frame(beta_iota)
+df_doge <- as.data.frame(beta_doge)
+df_terra <- as.data.frame(beta_terra)
+df_polka <- as.data.frame(beta_polka)
+
+#creacion dataframe betas
+df_betas <- bind_cols(df_ada, df_sol, df_iota, df_doge, df_terra, df_polka)
+
+rownames(df_betas) <- c("betas")
+
+df_betas <- df_betas %>% t()
+
+df_betas <- as.data.frame(df_betas)
+
+colnames(df_betas)  <- c("betas")
+
+df_betas_graf <- df_betas %>% mutate(Cripto = c("ADA", "SOL","IOTA", "DOGE", "TERRA", "POLKA"))
+
+p <- ggplot(df_betas_graf, aes(x = Cripto, y = betas, fill = "#fbf7f0"))
+grafico <- p + geom_col() + coord_polar()
+grafico + theme(axis.ticks = element_line(size = 0),
+    panel.grid.major = element_line(colour = "brown4"),
+    panel.grid.minor = element_line(colour = "green"),
+    axis.text = element_text(family = "Helvetica-Narrow"),
+    axis.text.x = element_text(family = "Times"),
+    panel.background = element_rect(fill = "#fbf7f0"),
+    plot.background = element_rect(fill = "#fbf7f0"),
+    strip.text = element_text(colour = "powderblue")) +labs(title = "Betas Altcoins-BTC", x = NULL,
+    y = NULL) + theme(legend.position = "none")
+
+```
+
+Como conclusión, por tanto podemos decir que existe una gran correlación con Bitcoin por parte de las criptomonedas estudiadas. El caso de Solana es la que presenta una correlación más baja, y, aún así, es de 0,77.
+
+## <FONT COLOR="d3a46a">**Código**</FONT>
+
+```{r, eval=FALSE, include=TRUE}
+#Primero descargamos los datos de yahoo finance a traves de getSymbols gracias al paquete quantmod. Analizaremos los datos de este último año.
+
+l<-getSymbols("BTC-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("ADA-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("SOL1-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("MIOTA-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("DOGE-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("LUNA1-USD", src = "yahoo", from = "2021-01-01")
+
+l<-getSymbols("DOT1-USD", src = "yahoo", from = "2021-01-01")
+
+#Segundo seleccionamos el precio de cierre y calculamos los retornos simples. (La estimación de la beta de un activo debe hacerse sobre los retornos, no sobre su precio).
+
+BTC <- `BTC-USD`[,"BTC-USD.Close"]
+
+ADA <- `ADA-USD`[,"ADA-USD.Close"]
+
+SOL <- `SOL1-USD`[,"SOL1-USD.Close"]
+
+IOTA <- `MIOTA-USD`[,"MIOTA-USD.Close"]
+
+DOGE <- `DOGE-USD`[,"DOGE-USD.Close"]
+
+TERRA <- `LUNA1-USD`[,"LUNA1-USD.Close"]
+
+POLKA <- `DOT1-USD`[,"DOT1-USD.Close"]
+
+
+retorno_btc_corr <- na.omit(Return.calculate(BTC))
+
+retorno_ada_corr <- na.omit(Return.calculate(ADA))
+
+retorno_sol_corr <- na.omit(Return.calculate(SOL))
+
+retorno_iota_corr <- na.omit(Return.calculate(IOTA))
+
+retorno_doge_corr <- na.omit(Return.calculate(DOGE))
+
+retorno_terra_corr <- na.omit(Return.calculate(TERRA))
+
+retorno_polka_corr <- na.omit(Return.calculate(POLKA))
+
+#Ahora solo nos queda calcular la beta
+
+beta_ada <- CAPM.beta(retorno_ada_corr, retorno_btc_corr)
+
+beta_sol <- CAPM.beta(retorno_sol_corr, retorno_btc_corr)
+
+beta_iota <- CAPM.beta(retorno_iota_corr, retorno_btc_corr)
+
+beta_doge <- CAPM.beta(retorno_doge_corr, retorno_btc_corr)
+
+beta_terra <- CAPM.beta(retorno_terra_corr, retorno_btc_corr)
+
+beta_terra_df <- as.data.frame(beta_terra)
+
+beta_polka <- CAPM.beta(retorno_polka_corr, retorno_btc_corr)
+beta_polka_df <- as.data.frame(beta_polka)
+
+
+df_ada <- as.data.frame(beta_ada)
+df_sol <- as.data.frame(beta_sol)
+df_iota <- as.data.frame(beta_iota)
+df_doge <- as.data.frame(beta_doge)
+df_terra <- as.data.frame(beta_terra)
+df_polka <- as.data.frame(beta_polka)
+
+#creacion dataframe betas
+df_betas <- bind_cols(df_ada, df_sol, df_iota, df_doge, df_terra, df_polka)
+
+rownames(df_betas) <- c("betas")
+
+df_betas <- df_betas %>% t()
+
+df_betas <- as.data.frame(df_betas)
+
+colnames(df_betas)  <- c("betas")
+
+df_betas_graf <- df_betas %>% mutate(Cripto = c("ADA", "SOL","IOTA", "DOGE", "TERRA", "POLKA"))
+
+p <- ggplot(df_betas_graf, aes(x = Cripto, y = betas, fill = "#fbf7f0"))
+grafico <- p + geom_col() + coord_polar()
+grafico + theme(axis.ticks = element_line(size = 0),
+    panel.grid.major = element_line(colour = "brown4"),
+    panel.grid.minor = element_line(colour = "green"),
+    axis.text = element_text(family = "Helvetica-Narrow"),
+    axis.text.x = element_text(family = "Times"),
+    panel.background = element_rect(fill = "#fbf7f0"),
+    plot.background = element_rect(fill = "#fbf7f0"),
+    strip.text = element_text(colour = "powderblue")) +labs(title = "Betas Altcoins-BTC", x = NULL,
+    y = NULL) + theme(legend.position = "none")
+
+```
+
+# 11. Conclusión
+
+A lo largo del trabajo hemos llegado a varias conclusiones:
+En primer lugar, que no por ser la más famosa, Bitcoin es la criptomoneda principal en los mercados.
+Además, hemos visto cómo se pueden adaptar muchos indicadores usados en el análisis técnico de acciones y otras divisas al mercado de las criptomonedas.
+
+Pero, una de las principales conclusiones a las que hemos llegado es que las criptomonedas es algo a tener en cuenta en estos años y en el futuro por los proyectos de blockchain que hay detrás, pero, sin duda, también son un peligro para el sistema monetario y hemos comprobado lo volátiles que son en comparación con otros activos. Si bien, puede ser interesante estudiar su evolución y su análisis, aún es pronto para optar por ellas como mecanismo para hacer las transacciones de nuestro día a día y más aún como mecanismo para preservar nuestro poder adquisitivo.
+
+En alusión a lo último dicho, terminamos la conclusión con esta afirmación del economista Philipp Heimberger:
+
+```{r, echo = FALSE, out.width = "60%"}
+tweetrmd::tweet_embed("https://twitter.com/heimbergecon/status/1470638111113850880", theme = "light", align = "center", dnt = TRUE, maxwidth = 400)
+```
+
+
+# 12. Trabajos en los que te has basado
+
+Analisis Tecnico: Analisis Técnico del Bitcoin, Jesus B.Zerpa, Rpubs
+
+Predicción Precio: Pronosticos del Bitcoin y Ether usando prophet, Jesus B.Zerpa, Rpubs
+
+Tabla: [Riding tables with gt and gtExtras](https://bjnnowak.netlify.app/2021/10/04/r-beautiful-tables-with-gt-and-gtextras/)
+
+Bar chart race: [Robservable](https://observablehq.com/@juba/bar-chart-race)
+
+Correlación aparición de nuevas criptomonedas- precio BTC, referencia de plot_school_shooting visto en clase
+
+
+# 13. Bibliografía
+
+[Analisis Tecnico](https://www.rpubs.com/JesusZ/analisis_tecnico-btc)
+
+[Prediciccion Precio](https://www.rpubs.com/JesusZ/bitcoin_ether_prophet)
+
+[Retornos, Downsides, Betas](https://mexiquant.substack.com/p/analizando-el-riesgo-de-una-accion)
+
+[Fuentes](https://fontawesome.com/v5.15/icons?d=gallery&p=2&m=free)
+
+[Países](https://coin.dance/)
+
+[Cartography](https://cran.r-project.org/web/packages/cartography/vignettes/cartography.html)
+
+
+<br><br>
+
+<hr class="linea-red">
+<hr class="linea-red">
+
+
+```{r, echo = FALSE}
+sessioninfo::session_info() %>% details::details(summary = 'Información de mi R-sesión:') 
+```
+
+
+<br><br>
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
+<br><br>
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
